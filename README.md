@@ -1,8 +1,8 @@
+<div align="center">
 
+# 🪙💚Cryptonite
 
-![Cryptonite](./assets/logo_jpg.jpg)
-
-
+</div>
 
 
 Cryptonite💚 A high-performance, resilient, and scalable data aggregation service built to fetch, merge, and stream meme coin data from multiple Decentralized Exchange (DEX) sources. This service mimics the data flow of platforms like axiom.trade/discover, providing a unified source of real-time market data via REST API and WebSockets.[1]
