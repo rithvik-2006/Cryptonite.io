@@ -12,18 +12,34 @@ class DexScreenerService {
     this.rateLimiter = new RateLimiter(config.apiRateLimits.dexScreener);
   }
 
+  // async searchTokens(query: string): Promise<TokenData[]> {
+  //   return this.rateLimiter.throttle(async () => {
+  //     return exponentialBackoff(async () => {
+  //       const response = await axios.get(`${this.baseURL}/search`, {
+  //         params: { q: query }
+  //       });
+
+  //       return this.transformData(response.data.pairs || []);
+  //     });
+  //   });
+  // }
+
   async searchTokens(query: string): Promise<TokenData[]> {
     return this.rateLimiter.throttle(async () => {
-      return exponentialBackoff(async () => {
-        const response = await axios.get(`${this.baseURL}/search`, {
-          params: { q: query }
-        });
-
-        return this.transformData(response.data.pairs || []);
-      });
+      try {
+        const { data } = await axios.get<{ pairs?: any[] }>(
+          `${this.baseURL}/search`,
+          { params: { q: query } }
+        );
+        
+        return this.transformData(data?.pairs ?? []);
+      } catch (err) {
+        console.error("searchTokens failed:", err);
+        return []; // fallback, but you lose retries
+      }
     });
   }
-
+  
   async getTokensByAddress(addresses: string[]): Promise<TokenData[]> {
     const tokens: TokenData[] = [];
     

@@ -1,4 +1,5 @@
-//services/aggregation.service.ts
+
+
 import { TokenData, FilterParams, PaginationParams } from '../types/token.types';
 import dexScreenerService from './dexScreener.service';
 import geckoTerminalService from './geckoTerminal.service';
@@ -8,27 +9,45 @@ class AggregationService {
   async aggregateTokens(forceRefresh: boolean = false): Promise<TokenData[]> {
     const cacheKey = 'tokens:all';
     
+    // Check cache
     if (!forceRefresh) {
       const cached = await cacheService.get<TokenData[]>(cacheKey);
-      if (cached) return cached;
+      if (cached) {
+        console.log('📦 Serving from cache');
+        return cached;
+      }
     }
 
-    const [dexScreenerTokens, geckoTokens] = await Promise.allSettled([
+    console.log('🔄 Fetching fresh data from APIs...');
+
+    // Fetch from multiple sources in parallel
+    const results = await Promise.allSettled([
       dexScreenerService.searchTokens('SOL'),
-      geckoTerminalService.getTokens('solana')
+      geckoTerminalService.getTokens(),
     ]);
 
     let allTokens: TokenData[] = [];
 
-    if (dexScreenerTokens.status === 'fulfilled') {
-      allTokens.push(...dexScreenerTokens.value);
+    // Collect successful results
+    if (results[0].status === 'fulfilled') {
+      console.log(`✅ DexScreener: ${results[0].value.length} tokens`);
+      allTokens.push(...results[0].value);
+    } else {
+      console.error('❌ DexScreener failed:', results[0].reason);
     }
 
-    if (geckoTokens.status === 'fulfilled') {
-      allTokens.push(...geckoTokens.value);
+    if (results[1].status === 'fulfilled') {
+      console.log(`✅ GeckoTerminal: ${results[1].value.length} tokens`);
+      allTokens.push(...results[1].value);
+    } else {
+      console.error('❌ GeckoTerminal failed:', results[1].reason);
     }
 
+    // Merge duplicate tokens
     const mergedTokens = this.mergeTokens(allTokens);
+    console.log(`🔀 Merged to ${mergedTokens.length} unique tokens`+'\n');
+
+    // Cache the results
     await cacheService.set(cacheKey, mergedTokens);
 
     return mergedTokens;
@@ -43,14 +62,27 @@ class AggregationService {
       if (!existing) {
         tokenMap.set(token.token_address, token);
       } else {
-        // Merge data, preferring newer data
-        const merged = {
+        // Merge data, preferring source with higher liquidity
+        const merged: TokenData = {
           ...existing,
+          // Take max values for cumulative metrics
           volume_sol: Math.max(existing.volume_sol, token.volume_sol),
           liquidity_sol: Math.max(existing.liquidity_sol, token.liquidity_sol),
           transaction_count: existing.transaction_count + token.transaction_count,
-          last_updated: Math.max(existing.last_updated, token.last_updated)
+          last_updated: Math.max(existing.last_updated, token.last_updated),
+          
+          // Prefer data from source with higher liquidity
+          ...(token.liquidity_sol > existing.liquidity_sol ? {
+            price_sol: token.price_sol,
+            market_cap_sol: token.market_cap_sol,
+            price_1hr_change: token.price_1hr_change,
+            price_24hr_change: token.price_24hr_change,
+            price_7d_change: token.price_7d_change,
+            token_name: token.token_name,
+            protocol: token.protocol,
+          } : {})
         };
+        
         tokenMap.set(token.token_address, merged);
       }
     }
@@ -81,7 +113,7 @@ class AggregationService {
             break;
           case 'price_change':
             const timeKey = filters.timePeriod === '7d' ? 'price_7d_change' :
-                           filters.timePeriod === '24h' ? 'price_24hr_change' : 'price_1hr_change';
+                            filters.timePeriod === '24h' ? 'price_24hr_change' : 'price_1hr_change';
             aVal = (a as any)[timeKey] || 0;
             bVal = (b as any)[timeKey] || 0;
             break;
@@ -96,7 +128,7 @@ class AggregationService {
     }
 
     // Pagination
-    const limit = pagination.limit || 20;
+    const limit = Math.min(pagination.limit || 20, 100); // Max 100 per page
     const startIndex = pagination.cursor ? parseInt(pagination.cursor) : 0;
     const endIndex = startIndex + limit;
     const paginatedTokens = filtered.slice(startIndex, endIndex);
@@ -104,7 +136,8 @@ class AggregationService {
     return {
       tokens: paginatedTokens,
       nextCursor: endIndex < filtered.length ? endIndex.toString() : null,
-      hasMore: endIndex < filtered.length
+      hasMore: endIndex < filtered.length,
+      total: filtered.length
     };
   }
 }
