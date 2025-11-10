@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WS Token Updates Tester</title>
+  <!-- Match your server's Socket.io v4 -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <style>
+    body{font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:#0f172a;color:#e2e8f0;margin:0;padding:24px;display:flex;flex-direction:column;gap:16px}
+    h1{color:#38bdf8;margin:0;text-shadow:0 0 10px rgba(56,189,248,.35)}
+    .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .bar input,.bar button{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:8px 12px}
+    .bar button{cursor:pointer}
+    .chip{background:#111827;border:1px solid #374151;border-radius:999px;padding:6px 10px;font-size:.9rem}
+    #status{padding:8px 12px;border-radius:8px;border:1px solid #334155;background:#1e293b}
+    #status::before{content:"● ";color:#f43f5e}
+    #status.connected{background:#064e3b;color:#d1fae5}
+    #status.connected::before{color:#22c55e}
+    #log{background:#0b1220;border:1px solid #1f2937;border-radius:12px;padding:16px;height:380px;overflow:auto;white-space:pre-wrap}
+    #data{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:16px;height:420px;overflow:auto;white-space:pre}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <h1>📡 Token Live Updates — WebSocket Test</h1>
+
+  <div class="bar">
+    <input id="server" size="36" value="http://localhost:3000" />
+    <button id="connectBtn">Connect</button>
+    <button id="disconnectBtn">Disconnect</button>
+    <button id="subscribeBtn">Subscribe</button>
+    <span id="status">Disconnected</span>
+  </div>
+
+  <div class="row">
+    <span class="chip">Events: <b id="events">0</b></span>
+    <span class="chip">Initial size: <b id="initialCount">0</b></span>
+    <span class="chip">Last update size: <b id="updateCount">0</b></span>
+    <span class="chip">Latency: <b id="latency">–</b> ms</span>
+    <span class="chip">Last recv: <b id="lastSeen">–</b></span>
+  </div>
+
+  <div id="log">Logs will appear here…</div>
+  <div id="data">Data will appear here…</div>
+
+  <script>
+    let socket = null;
+    let events = 0;
+    let pingInterval = null;
+
+    const $ = (id) => document.getElementById(id);
+    const statusEl = $('status');
+    const logEl = $('log');
+    const dataEl = $('data');
+    const eventsEl = $('events');
+    const initCountEl = $('initialCount');
+    const updCountEl = $('updateCount');
+    const latencyEl = $('latency');
+    const lastSeenEl = $('lastSeen');
+
+    function log(msg) {
+      const ts = new Date().toLocaleTimeString();
+      logEl.textContent = `[${ts}] ${msg}\n` + logEl.textContent;
+    }
+
+    function setStatus(connected) {
+      statusEl.textContent = connected ? 'Connected' : 'Disconnected';
+      statusEl.classList.toggle('connected', connected);
+    }
+
+    function connect() {
+      const url = $('server').value.trim();
+      if (socket) socket.disconnect();
+
+      // Force WebSocket transport for clarity during testing
+      socket = io(url, { transports: ['websocket'] });
+
+      socket.on('connect', () => {
+        setStatus(true);
+        log(`Connected (id: ${socket.id})`);
+        startLatencyProbe();
+      });
+
+      socket.on('disconnect', (reason) => {
+        setStatus(false);
+        log(`Disconnected: ${reason}`);
+        stopLatencyProbe();
+      });
+
+      socket.on('connect_error', (err) => {
+        setStatus(false);
+        log(`Connect error: ${err.message}`);
+      });
+
+      // Your server emits these
+      socket.on('initial-data', (payload) => {
+        events++;
+        eventsEl.textContent = events;
+        const size = Array.isArray(payload) ? payload.length : 1;
+        initCountEl.textContent = size;
+        dataEl.textContent = JSON.stringify(payload, null, 2);
+        lastSeenEl.textContent = new Date().toLocaleTimeString();
+        log(`initial-data received (${size} tokens)`);
+      });
+
+      socket.on('price-update', (payload) => {
+        events++;
+        eventsEl.textContent = events;
+        const size = Array.isArray(payload) ? payload.length : 1;
+        updCountEl.textContent = size;
+        dataEl.textContent = JSON.stringify(payload, null, 2);
+        lastSeenEl.textContent = new Date().toLocaleTimeString();
+        log(`price-update received (${size} tokens)`);
+      });
+    }
+
+    function disconnect() {
+      if (socket) {
+        socket.disconnect();
+        socket = null;
+      }
+      stopLatencyProbe();
+      setStatus(false);
+    }
+
+    function subscribe() {
+      if (!socket || !socket.connected) {
+        log('Not connected yet.');
+        return;
+      }
+      socket.emit('subscribe');
+      log('Sent subscribe');
+    }
+
+    function startLatencyProbe() {
+      stopLatencyProbe();
+      pingInterval = setInterval(() => {
+        if (!socket || !socket.connected) return;
+        const start = Date.now();
+        // Use a built-in ping approach: emit a custom event and measure ack time
+        socket.timeout(5000).emit('ping-check', (ack) => {
+          const ms = Date.now() - start;
+          latencyEl.textContent = ms;
+        });
+      }, 3000);
+    }
+
+    function stopLatencyProbe() {
+      if (pingInterval) {
+        clearInterval(pingInterval);
+        pingInterval = null;
+      }
+      latencyEl.textContent = '–';
+    }
+
+    $('connectBtn').addEventListener('click', connect);
+    $('disconnectBtn').addEventListener('click', disconnect);
+    $('subscribeBtn').addEventListener('click', subscribe);
+
+    // Optional: auto-connect on load
+    // connect();
+  </script>
+</body>
+</html>
