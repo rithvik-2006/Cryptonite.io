@@ -1,6 +1,6 @@
 <div align="center">
 
-![Cryptonite](./assets/logo.png)
+![Cryptonite](./assets/logo_jpg.jpg)
 
 </div>
 
