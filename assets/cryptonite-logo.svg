@@ -1,0 +1,28 @@
+<svg width="800" height="200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#34d399;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6ee7b7;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="coin-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Coin Icon -->
+  <circle cx="100" cy="100" r="50" fill="url(#coin-gradient)" stroke="#d97706" stroke-width="3"/>
+  <text x="100" y="115" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="#fff" text-anchor="middle">₿</text>
+  
+  <!-- Cryptonite Text -->
+  <text x="200" y="120" font-family="'Courier New', monospace" font-size="72" font-weight="bold" fill="url(#gradient)">
+    Cryptonite
+  </text>
+  
+  <!-- Animated Pulse Circle -->
+  <circle cx="100" cy="100" r="50" fill="none" stroke="#10b981" stroke-width="2" opacity="0.3">
+    <animate attributeName="r" from="50" to="70" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" from="0.5" to="0" dur="2s" repeatCount="indefinite"/>
+  </circle>
+</svg>
