@@ -1,3 +1,4 @@
+//tokens.routes.ts
 import { FastifyInstance } from 'fastify';
 import tokenController from '../controllers/token.controller';
 
