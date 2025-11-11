@@ -1,10 +1,9 @@
 //config.ts
-
-  
 export default {
-  port: process.env.PORT || 3000,
+  port: parseInt(process.env.PORT || '3000'),
   redis: {
-    url: process.env.REDIS_URL || '', // TCP connection string
+    url: process.env.UPSTASH_REDIS_REST_URL || '',
+    token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
   },
   cacheTTL: parseInt(process.env.CACHE_TTL || '30'),
   apiRateLimits: {
@@ -13,6 +12,20 @@ export default {
     geckoTerminal: 300
   }
 };
+
+  
+// export default {
+//   port: process.env.PORT || 3000,
+//   redis: {
+//     url: process.env.REDIS_URL || '', // TCP connection string
+//   },
+//   cacheTTL: parseInt(process.env.CACHE_TTL || '30'),
+//   apiRateLimits: {
+//     dexScreener: 300,
+//     jupiter: 600,
+//     geckoTerminal: 300
+//   }
+// };
 
 //Developement
 // export default {

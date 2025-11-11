@@ -1,35 +1,24 @@
 //services/cache.service.ts
-
-
-import Redis from 'ioredis';
+import { Redis } from '@upstash/redis';
 import config from '../config/config';
 
 class CacheService {
   private client: Redis;
 
   constructor() {
-    // Use the Redis URL format: rediss://default:password@host:port
-    this.client = new Redis(config.redis.url, {
-      retryStrategy: (times) => {
-        const delay = Math.min(times * 50, 2000);
-        return delay;
-      },
-      maxRetriesPerRequest: 3,
+    // Initialize Upstash Redis REST client
+    this.client = new Redis({
+      url: config.redis.url,
+      token: config.redis.token,
     });
 
-    this.client.on('error', (err) => {
-      console.error('❌ Redis Client Error', err);
-    });
-
-    this.client.on('connect', () => {
-      console.log('✅ Connected to Redis via TCP');
-    });
+    console.log('✅ Upstash Redis REST client initialized');
   }
 
   async get<T>(key: string): Promise<T | null> {
     try {
-      const data = await this.client.get(key);
-      return data ? JSON.parse(data) : null;
+      const data = await this.client.get<T>(key);
+      return data;
     } catch (error) {
       console.error('Cache get error:', error);
       return null;
@@ -38,7 +27,8 @@ class CacheService {
 
   async set(key: string, value: any, ttl: number = config.cacheTTL): Promise<void> {
     try {
-      await this.client.setex(key, ttl, JSON.stringify(value));
+      // Upstash uses { ex: seconds } for TTL
+      await this.client.set(key, value, { ex: ttl });
     } catch (error) {
       console.error('Cache set error:', error);
     }
