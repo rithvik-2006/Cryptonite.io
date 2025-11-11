@@ -11,7 +11,7 @@ Cryptonite💚 A high-performance, resilient, and scalable data aggregation serv
 
 | Resource | Link |
 |----------|------|
-| 🚀 **Deployment** | [Your Deployment URL] |
+| 🚀 **Deployment** | [Cryptonite.io](https://cryptonite-io.vercel.app/) |
 | 📹 **Demo Video** | [Your YouTube Link] |
 | 📮 **API Collection** | [View Postman Collection] |
 | 🛠️ **Tech Stack** | Fastify, TypeScript, Node.js, Redis, Socket.io |

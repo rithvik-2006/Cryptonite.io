@@ -1,0 +1,476 @@
+{
+    "info": {
+      "name": "Cryptonite API",
+      "description": "Real-time meme coin aggregation service with WebSocket support",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "_exporter_id": "12345"
+    },
+    "item": [
+      {
+        "name": "Health",
+        "item": [
+          {
+            "name": "Health Check",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test('Status code is 200', function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test('Response has correct structure', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData).to.have.property('status');",
+                    "    pm.expect(jsonData).to.have.property('timestamp');",
+                    "    pm.expect(jsonData).to.have.property('uptime');",
+                    "});",
+                    "",
+                    "pm.test('Status is ok', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData.status).to.eql('ok');",
+                    "});",
+                    "",
+                    "pm.test('Response time is less than 2000ms', function () {",
+                    "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/health",
+                "host": ["{{base_url}}"],
+                "path": ["health"]
+              },
+              "description": "Check if the service is running and healthy"
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "Tokens",
+        "item": [
+          {
+            "name": "Get All Tokens (Default)",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test('Status code is 200', function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test('Response has success property', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData).to.have.property('success');",
+                    "    pm.expect(jsonData.success).to.be.true;",
+                    "});",
+                    "",
+                    "pm.test('Response has data array', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData).to.have.property('data');",
+                    "    pm.expect(jsonData.data).to.be.an('array');",
+                    "});",
+                    "",
+                    "pm.test('Default limit is 20', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData.data.length).to.be.at.most(20);",
+                    "});",
+                    "",
+                    "pm.test('Token has required fields', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    if (jsonData.data.length > 0) {",
+                    "        const token = jsonData.data[0];",
+                    "        pm.expect(token).to.have.property('token_address');",
+                    "        pm.expect(token).to.have.property('token_name');",
+                    "        pm.expect(token).to.have.property('price_sol');",
+                    "        pm.expect(token).to.have.property('source');",
+                    "        ",
+                    "        // Save first token address for later tests",
+                    "        pm.environment.set('test_token_address', token.token_address);",
+                    "    }",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/tokens",
+                "host": ["{{base_url}}"],
+                "path": ["api", "tokens"]
+              },
+              "description": "Get all tokens with default parameters (limit=20, sortBy=volume, order=desc)"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Tokens - Custom Limit",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test('Status code is 200', function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test('Returns exactly 5 tokens', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData.data.length).to.be.at.most(5);",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/tokens?limit=5",
+                "host": ["{{base_url}}"],
+                "path": ["api", "tokens"],
+                "query": [
+                  {
+                    "key": "limit",
+                    "value": "5"
+                  }
+                ]
+              },
+              "description": "Get tokens with custom limit"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Tokens - Sort by Market Cap",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test('Status code is 200', function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test('Tokens are sorted by market cap descending', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    if (jsonData.data.length > 1) {",
+                    "        for (let i = 0; i < jsonData.data.length - 1; i++) {",
+                    "            pm.expect(jsonData.data[i].market_cap_sol).to.be.at.least(jsonData.data[i+1].market_cap_sol);",
+                    "        }",
+                    "    }",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/tokens?sortBy=marketCap&order=desc",
+                "host": ["{{base_url}}"],
+                "path": ["api", "tokens"],
+                "query": [
+                  {
+                    "key": "sortBy",
+                    "value": "marketCap"
+                  },
+                  {
+                    "key": "order",
+                    "value": "desc"
+                  }
+                ]
+              },
+              "description": "Get tokens sorted by market cap in descending order"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Tokens - Sort by Price (Ascending)",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test('Status code is 200', function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test('Tokens are sorted by price ascending', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    if (jsonData.data.length > 1) {",
+                    "        for (let i = 0; i < jsonData.data.length - 1; i++) {",
+                    "            pm.expect(jsonData.data[i].price_sol).to.be.at.most(jsonData.data[i+1].price_sol);",
+                    "        }",
+                    "    }",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/tokens?sortBy=price&order=asc&limit=10",
+                "host": ["{{base_url}}"],
+                "path": ["api", "tokens"],
+                "query": [
+                  {
+                    "key": "sortBy",
+                    "value": "price"
+                  },
+                  {
+                    "key": "order",
+                    "value": "asc"
+                  },
+                  {
+                    "key": "limit",
+                    "value": "10"
+                  }
+                ]
+              },
+              "description": "Get tokens sorted by price in ascending order"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Single Token by Address",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test('Status code is 200', function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test('Response contains single token', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData).to.have.property('success', true);",
+                    "    pm.expect(jsonData).to.have.property('data');",
+                    "    pm.expect(jsonData.data).to.be.an('object');",
+                    "});",
+                    "",
+                    "pm.test('Token has complete data', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    const token = jsonData.data;",
+                    "    pm.expect(token).to.have.property('token_address');",
+                    "    pm.expect(token).to.have.property('token_name');",
+                    "    pm.expect(token).to.have.property('price_sol');",
+                    "    pm.expect(token).to.have.property('market_cap_sol');",
+                    "    pm.expect(token).to.have.property('volume_sol');",
+                    "    pm.expect(token).to.have.property('source');",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/tokens/{{test_token_address}}",
+                "host": ["{{base_url}}"],
+                "path": ["api", "tokens", "{{test_token_address}}"]
+              },
+              "description": "Get detailed information about a specific token by address"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Token - Invalid Address (404)",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test('Status code is 404', function () {",
+                    "    pm.response.to.have.status(404);",
+                    "});",
+                    "",
+                    "pm.test('Error message is present', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData).to.have.property('success', false);",
+                    "    pm.expect(jsonData).to.have.property('error');",
+                    "    pm.expect(jsonData.error).to.include('not found');",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/tokens/invalid_address_12345",
+                "host": ["{{base_url}}"],
+                "path": ["api", "tokens", "invalid_address_12345"]
+              },
+              "description": "Test error handling for invalid token address"
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "Edge Cases",
+        "item": [
+          {
+            "name": "Invalid Endpoint (404)",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test('Status code is 404', function () {",
+                    "    pm.response.to.have.status(404);",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/nonexistent",
+                "host": ["{{base_url}}"],
+                "path": ["api", "nonexistent"]
+              },
+              "description": "Test 404 error for non-existent endpoint"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Tokens - Invalid Sort Parameter",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test('Status code is 200 (gracefully handled)', function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test('Returns data despite invalid parameter', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData).to.have.property('data');",
+                    "    pm.expect(jsonData.data).to.be.an('array');",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/tokens?sortBy=invalid&order=invalid",
+                "host": ["{{base_url}}"],
+                "path": ["api", "tokens"],
+                "query": [
+                  {
+                    "key": "sortBy",
+                    "value": "invalid"
+                  },
+                  {
+                    "key": "order",
+                    "value": "invalid"
+                  }
+                ]
+              },
+              "description": "Test with invalid query parameters"
+            },
+            "response": []
+          },
+          {
+            "name": "Get Tokens - Extreme Limit",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test('Status code is 200', function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test('Handles large limit gracefully', function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData.data).to.be.an('array');",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/api/tokens?limit=999999",
+                "host": ["{{base_url}}"],
+                "path": ["api", "tokens"],
+                "query": [
+                  {
+                    "key": "limit",
+                    "value": "999999"
+                  }
+                ]
+              },
+              "description": "Test with extremely large limit"
+            },
+            "response": []
+          }
+        ]
+      }
+    ],
+    "event": [
+      {
+        "listen": "prerequest",
+        "script": {
+          "type": "text/javascript",
+          "exec": [""]
+        }
+      },
+      {
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [""]
+        }
+      }
+    ],
+    "variable": [
+      {
+        "key": "base_url",
+        "value": "https://cryptonite-io.onrender.com",
+        "type": "string"
+      },
+      {
+        "key": "test_token_address",
+        "value": "",
+        "type": "string"
+      }
+    ]
+  }
+  
