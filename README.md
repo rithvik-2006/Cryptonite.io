@@ -4,24 +4,23 @@
 
 </div>
 
-
 Cryptonite💚 A high-performance, resilient, and scalable data aggregation service built to fetch, merge, and stream meme coin data from multiple Decentralized Exchange (DEX) sources. This service mimics the data flow of platforms like axiom.trade/discover, providing a unified source of real-time market data via REST API and WebSockets.[1]
 
 ## 📊 Project Status
 
 | Resource | Link |
 |----------|------|
-| 🚀 **Deployment** | [Cryptonite.io](https://cryptonite-io.vercel.app/) |
-| 📹 **Demo Video** | [Your YouTube Link] |
-| 📮 **API Collection** | [View Postman Collection] |
+| 🚀 **Deployment** | [Cryptonite.io 💚🪙](https://cryptonite-io.vercel.app/) |
+| 📹 **Demo Video** | [👉 View Youtube Video](https://www.youtube.com/watch?v=tgn7_AbffkY) |
+| 📮 **API Collection** | [View Postman Collection](https://gitlab.com/mannerithvik708-group/cryptonite.io/-/blob/main/Cryptonite-API.postman_collection.json?ref_type=heads) |
 | 🛠️ **Tech Stack** | Fastify, TypeScript, Node.js, Redis, Socket.io |
 
 ## 💡 Problem Statement
 
 The cryptocurrency market is fragmented across multiple DEX platforms, making it challenging to get a unified view of meme coin data. This service addresses key challenges:[1]
 
-1. **Multi-source Aggregation**: Fetching data concurrently from various APIs (DexScreener, Jupiter, GeckoTerminal)[1]
-2. **Rate Limit Management**: Implementing exponential backoff and intelligent caching to adhere to strict rate limits (e.g., DexScreener's 300 req/min)[1]
+1. **Multi-source Aggregation**: Fetching data concurrently from various APIs [DexScreener, Jupiter, GeckoTerminal](1)
+2. **Rate Limit Management**: Implementing exponential backoff and intelligent caching to adhere to strict rate limits [e.g., DexScreener's 300 req/min](1)
 3. **Data Consistency**: Intelligently merging duplicate tokens that appear across different DEXs[1]
 4. **Real-time Efficiency**: Delivering continuous price updates via WebSockets to prevent wasteful repeated HTTP polling[1]
 
@@ -94,6 +93,7 @@ Fetch the aggregated list with filtering, sorting, and pagination.[1]
 | `cursor` | `string` | `-` | Opaque string for cursor-based pagination |
 
 **Example Request:**
+
 ```bash
 GET /api/tokens?timePeriod=24h&sortBy=volume&sortOrder=desc&limit=50
 ```
@@ -107,6 +107,7 @@ Fetch details for a single token.[1]
 | `address` | Required token contract address |
 
 **Example Request:**
+
 ```bash
 GET /api/tokens/576P1t7XsRL4ZVj38LV2eYWxXRPguBADA8BxcNz1xo8y
 ```
@@ -116,8 +117,9 @@ GET /api/tokens/576P1t7XsRL4ZVj38LV2eYWxXRPguBADA8BxcNz1xo8y
 The service utilizes Socket.io to push price and volume changes to clients, fulfilling the core requirement for live updates after the initial data load.[1]
 
 ### Connection URL
+
 ```
-ws://[Your Deployment URL]
+ConnectionUrl = https://cryptonite-io.onrender.com
 ```
 
 ### Server → Client Events
@@ -132,7 +134,7 @@ ws://[Your Deployment URL]
 ```javascript
 import io from 'socket.io-client';
 
-const socket = io('ws://your-deployment-url');
+const socket = io('https://cryptonite-io.onrender.com');
 
 // Listen for initial data
 socket.on('initial-data', (data) => {
@@ -151,9 +153,9 @@ socket.on('price-update', (data) => {
 
 ### Prerequisites
 
-- Node.js (v18+)[1]
-- Redis (v6+)[1]
-- npm or yarn[1]
+- Node.js [v18+](1)
+- Redis [v6+](1)
+- npm or yarn
 
 ### Steps
 
@@ -271,6 +273,7 @@ docker-compose up -d
 ### Environment Setup
 
 Ensure your production environment has:
+
 - Redis instance configured and accessible
 - Environment variables properly set
 - Node.js runtime (v18+)
