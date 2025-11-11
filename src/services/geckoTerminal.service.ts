@@ -1,4 +1,4 @@
-
+//services/geckoTerminal.service.ts
 import axios, { AxiosInstance } from 'axios';
 import { TokenData } from '../types/token.types';
 import { RateLimiter, exponentialBackoff } from '../utils/rateLimiter';

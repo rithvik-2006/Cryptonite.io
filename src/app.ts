@@ -6,6 +6,9 @@ import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import socketPlugin from './plugins/socket-io';
 import tokensRoutes from './routes/tokens.routes';
+// src/app.ts (or your plugin)
+const ORIGIN = process.env.CORS_ORIGIN || '*';
+
 
 export function buildFastify() {
   const app = Fastify({
@@ -16,8 +19,8 @@ export function buildFastify() {
   });
 
   // CORS
-  app.register(cors, { origin: true });
-
+  // app.register(cors, { origin: true });
+  app.register(cors, { origin: ORIGIN });
   // Rate limit only for API routes (not WebSocket)
   app.register(rateLimit, {
     global: false, // Don't apply globally
