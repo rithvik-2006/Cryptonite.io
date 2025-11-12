@@ -303,7 +303,7 @@ See the LICENSE file for details.[1]
 
 ## 📞 Support
 
-For issues, questions, or contributions, please open an issue on GitHub or contact [your-email@example.com].
+For issues, questions, or contributions, please open an issue on GitHub or contact [mannerithvik708@gmail.com].
 
 ***
 
