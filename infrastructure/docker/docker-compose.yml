@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: cryptonite_redis
+    ports:
+      - "6377:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24-alpine
+    container_name: cryptonite_clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ../clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
+      - CLICKHOUSE_DB=cryptonite
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cryptonite_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cryptonite_grafana
+    ports:
+      - "3005:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
+  ingestion-service:
+    build: 
+      context: ../../services/ingestion-rust
+      dockerfile: Dockerfile
+    container_name: cryptonite_ingestion
+    restart: always
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - RUST_LOG=info
+    depends_on:
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - default
+
+  gateway-service:
+    build: 
+      context: ../../services/gateway-fastify
+      dockerfile: Dockerfile
+    container_name: cryptonite_gateway
+    ports:
+      - "8081:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - PORT=8080
+      - NODE_ENV=production
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - default
+
+volumes:
+  redis_data:
+  clickhouse_data:
+  prometheus_data:
+  grafana_data:

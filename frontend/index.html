@@ -605,7 +605,7 @@
 
     // WebSocket connection
     function connect() {
-      const url = 'https://cryptonite-io.onrender.com';
+      const url = 'http://localhost:8081';
 
       socket = io(url, { 
         transports: ['websocket', 'polling'],
