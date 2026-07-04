@@ -262,3 +262,57 @@ docker-compose up -d --build
 - **Swagger Docs**: `http://localhost:8081/docs`
 - **Grafana**: `http://localhost:3005` (admin/admin)
 - **Prometheus**: `http://localhost:9090`
+
+---
+
+# Cryptonite — Phase 2: The Brain (Quant Intelligence Engine)
+
+> The intelligence layer of Cryptonite, continuously transforming raw market data into explainable investment recommendations.
+
+## 13. Pipeline Architecture
+
+The Brain operates on a highly decoupled, asynchronous pipeline orchestrated by the `QuantOrchestrator` using `asyncio.Queue`. 
+The flow of state transitions is strictly linear:
+
+`Autonomous Cron Loader -> Feature Engineering -> Forecasting -> Decision Engine -> Risk Engine -> Explainability Engine -> Recommendation Publisher -> Redis`
+
+## 14. Autonomous Market Loader & Cron Scheduler
+
+- **Background Daemon**: `AutonomousMarketLoader` runs an `asyncio` task every 60 seconds.
+- **Auto-Discovery**: Connects directly to Phase 1's `tokens:all` Redis cache to dynamically discover all active Solana markets.
+- **State Building**: Constructs historical `MarketState` snapshots for every token and enqueues them autonomously into the orchestrator pipeline for continuous scanning.
+
+## 15. Polars-Powered Feature Engineering
+
+- Transforms raw `MarketState` histories into quantitative features using `polars` expressions for high-performance vectorized operations without Python GIL blocking.
+- Generates metrics including RSI, Momentum, and Volatility using idiomatic Polars logic.
+
+## 16. Forecasting & Strategy Engines
+
+- **Decoupled Interfaces**: Abstract base classes `BaseForecastEngine` and `BaseDecisionEngine` allow models to be hot-swapped without architectural changes.
+- **MVP Implementations**: Currently uses heuristic, rule-based logic in `engines/mvp_impl.py` (e.g., scoring momentum and RSI).
+- **ML-Ready**: Designed to be seamlessly replaced with deep learning models (DeepLOB, FinRL, TFT) in Phase 3.
+
+## 17. Risk & Explainability
+
+- **Risk Engine**: Evaluates every potential decision against strict liquidity and volatility thresholds to assign an adjusted `Confidence` and `Risk` profile. High volatility results in confidence haircuts.
+- **Explainability Engine**: Generates human-readable reasoning arrays (e.g., "Asset is currently oversold") to explain exactly *why* a decision was reached.
+
+## 18. Strong Typing & Pydantic Validation
+
+- The entire pipeline state is enforced through strict, consolidated Pydantic V2 schemas (`schemas/pipeline_state.py`):
+  - `MarketState` -> `FeatureVector` -> `ForecastResult` -> `Decision` -> `RiskReport` -> `Recommendation`
+
+## 19. Publisher & Redis Sorted Set Indexing
+
+- **Atomic Pipelines**: Uses a Redis transaction (`self.redis.pipeline()`) to ensure atomic writes for the finalized JSON payload (`signal:{address}`).
+- **Ranked Indexing**: Calculates a composite rank score (Confidence * Action) and stores it in the `signals:top_ranked` Sorted Set using `ZADD` for instantaneous $O(1)$ lookup times.
+
+## 20. FastAPI Routes & Lifespan Integration
+
+- **FastAPI Lifespan**: API uses `@asynccontextmanager lifespan` to securely boot both the `QuantOrchestrator` workers and the `AutonomousMarketLoader` background tasks cleanly alongside the Redis TCP connection pool.
+- **API Endpoints**: 
+  - `GET /health` — Returns system health and current queue size.
+  - `POST /trigger/{token}` — Manual pipeline trigger for debugging.
+  - `GET /recommendations/{token}` — Fetches a single asset's finalized AI signal.
+  - `GET /recommendations/top?limit=5` — Queries the `signals:top_ranked` Sorted Set and batch-hydrates the absolute best quantitative opportunities via `MGET`.

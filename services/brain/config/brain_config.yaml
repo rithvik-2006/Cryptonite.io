@@ -1,0 +1,27 @@
+feature_engineering:
+  rsi_period: 14
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  volatility_period: 24
+
+forecasting:
+  default_horizon_hours: 24
+  heuristic_momentum_weight: 0.6
+  heuristic_volume_weight: 0.4
+
+decision:
+  buy_threshold: 65.0
+  sell_threshold: 35.0
+  momentum_weight: 0.3
+  liquidity_weight: 0.2
+  volume_weight: 0.2
+  volatility_weight: 0.3
+
+risk:
+  max_acceptable_volatility: 0.15
+  min_liquidity: 50000
+
+ranking:
+  min_confidence: 0.7
+  min_expected_return: 2.0
