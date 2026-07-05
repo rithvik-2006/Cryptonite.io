@@ -316,3 +316,18 @@ The flow of state transitions is strictly linear:
   - `POST /trigger/{token}` — Manual pipeline trigger for debugging.
   - `GET /recommendations/{token}` — Fetches a single asset's finalized AI signal.
   - `GET /recommendations/top?limit=5` — Queries the `signals:top_ranked` Sorted Set and batch-hydrates the absolute best quantitative opportunities via `MGET`.
+
+## 21. Market Microstructure Feature Engine
+
+- **Order Book & Trade Flow Analytics**: Extends standard price-action indicators with advanced market microstructure features:
+  - **Order Book Imbalance (OBI)**: Buy vs sell depth ratio tracking liquidity accumulation.
+  - **Volume Delta & CVD**: Taker buy vs taker sell pressure (10-bar and 50-bar cumulative) normalized using rolling z-scores.
+  - **Realized Volatility**: Tracks dynamic volatility regime shifts.
+- **Graceful Degradation**: Engine falls back securely to baseline technical signals if deep orderbook data is unavailable for newly listed tokens.
+
+## 22. Deep Reinforcement Learning (DRL) Engine
+
+- **Production RL Agent**: Upgraded from heuristic-based scoring to a deep reinforcement learning agent using Stable-Baselines3 (Proximal Policy Optimization).
+- **Expanded State Space**: Agent evaluates an 11-dimensional observation tensor combining classic technicals and advanced microstructure features.
+- **Synthetic Market Simulation**: Integrated data generation pipeline simulating correlated orderbook depth, taker flow, and stochastic price drift for offline RL pre-training.
+- **Hot-Swappable Inference**: The orchestrator dynamically loads serialized neural network weights (`.zip`) at runtime with automatic fallback to heuristics if the model is missing or retraining.
