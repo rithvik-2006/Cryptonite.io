@@ -5,6 +5,7 @@ import redis.asyncio as aioredis
 from schemas.pipeline_state import MarketState, Recommendation
 from engines.feature_engineering import FeatureEngine
 from engines.mvp_impl import HeuristicForecastEngine, HeuristicDecisionEngine
+from engines.rl_impl import ReinforcementLearningDecisionEngine
 from engines.risk_and_explain import RiskEngine, ExplainabilityEngine
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,15 @@ class QuantOrchestrator:
         self.redis = redis_client
         self.queue = asyncio.Queue()
         self.forecast_engine = HeuristicForecastEngine()
-        self.decision_engine = HeuristicDecisionEngine()
+        
+        # HOT-SWAPPED: RL Inference Engine replaces heuristic engine
+        rl_engine = ReinforcementLearningDecisionEngine("models/ppo_solana_v2")
+        if rl_engine.model is not None:
+            self.decision_engine = rl_engine
+        else:
+            logger.warning("Falling back to HeuristicDecisionEngine.")
+            self.decision_engine = HeuristicDecisionEngine()
+
         self.risk_engine = RiskEngine()
         self._running_task = None
 
@@ -28,13 +37,23 @@ class QuantOrchestrator:
         prices = [1.20, 1.22, 1.21, 1.23, 1.26] # Fallback defaults if Redis empty
         volumes = [1000, 1500, 1200, 2100, 2500]
         timestamps = [171000000, 171000060, 171000120, 171000180, 171000240]
+        bid_vol, ask_vol, taker_buy_vol, taker_sell_vol = [], [], [], []
         
         if history_raw:
             prices = [float(json.loads(t)["price"]) for t in history_raw]
             volumes = [float(json.loads(t).get("volume", 0)) for t in history_raw]
             timestamps = [int(json.loads(t)["timestamp"]) for t in history_raw]
+            # Microstructure: extract orderbook & taker flow when available
+            bid_vol = [float(json.loads(t).get("bid_vol", 0)) for t in history_raw]
+            ask_vol = [float(json.loads(t).get("ask_vol", 0)) for t in history_raw]
+            taker_buy_vol = [float(json.loads(t).get("taker_buy_vol", 0)) for t in history_raw]
+            taker_sell_vol = [float(json.loads(t).get("taker_sell_vol", 0)) for t in history_raw]
 
-        market_state = MarketState(token_address=token_address, prices=prices, volumes=volumes, timestamps=timestamps)
+        market_state = MarketState(
+            token_address=token_address, prices=prices, volumes=volumes, timestamps=timestamps,
+            bid_vol=bid_vol, ask_vol=ask_vol,
+            taker_buy_vol=taker_buy_vol, taker_sell_vol=taker_sell_vol
+        )
         await self.queue.put(market_state)
 
     async def _pipeline_worker_loop(self):

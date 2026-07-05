@@ -234,3 +234,7 @@ __pycache__/
 *.pyo
 *.egg-info/
 .eggs/
+
+# Brain Engine Data and Models
+services/brain/data/
+services/brain/models/*.zip

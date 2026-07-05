@@ -35,9 +35,32 @@ class ExplainabilityEngine:
         if features.momentum > 0:
             reasons.append("Positive short-term directional acceleration detected.")
             
+        if features.sma_20 > features.sma_50:
+            reasons.append("SMA-20 crossed above SMA-50 \u2014 bullish golden cross.")
+        elif features.sma_20 < features.sma_50:
+            reasons.append("SMA-20 crossed below SMA-50 \u2014 bearish death cross.")
+            
         if risk.risk_level == "HIGH":
             reasons.append("Risk parameters adjusted due to anomalous historical pool volatility.")
         else:
             reasons.append("Asset volatility profile falls safely within baseline parameters.")
-            
+
+        # ── Microstructure Explanations ────────────────────────────────
+        if features.order_book_imbalance > 0.3:
+            reasons.append("Order book shows strong buy-side depth accumulation.")
+        elif features.order_book_imbalance < -0.3:
+            reasons.append("Sell-side order book pressure detected — thin buy support.")
+
+        if features.volume_delta > 1.5:
+            reasons.append("Aggressive taker buy flow significantly exceeds sells.")
+        elif features.volume_delta < -1.5:
+            reasons.append("Taker sell pressure dominates — distribution phase likely.")
+
+        if abs(features.cvd_10) > 2.0:
+            direction = "bullish" if features.cvd_10 > 0 else "bearish"
+            reasons.append(f"Short-term CVD divergence signals {direction} order flow conviction.")
+
+        if features.realized_volatility > 0.04:
+            reasons.append("Realized volatility regime shift detected — elevated intraday variance.")
+
         return reasons
