@@ -2,6 +2,7 @@ import httpClient from '../../utils/httpClient';
 import { TokenData } from '../../types/token.types';
 import { MarketProvider } from './provider.interface';
 import { RateLimiter, exponentialBackoff } from '../../utils/rateLimiter';
+import { geckoTerminalRateLimiter } from '../../utils/sharedRateLimiters';
 import config from '../../config/config';
 
 export class MeteoraProvider implements MarketProvider {
@@ -10,7 +11,7 @@ export class MeteoraProvider implements MarketProvider {
   private baseURL = 'https://api.geckoterminal.com/api/v2';
 
   constructor() {
-    this.rateLimiter = new RateLimiter(config.apiRateLimits.geckoTerminal);
+    this.rateLimiter = geckoTerminalRateLimiter;
   }
 
   async fetchTrending(): Promise<TokenData[]> {
@@ -57,7 +58,7 @@ export class MeteoraProvider implements MarketProvider {
 
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await httpClient.get(`${this.baseURL}/networks/solana/dexes/meteora`);
+      const response = await httpClient.get(`${this.baseURL}/networks/solana/pools?page=1`);
       return response.status === 200;
     } catch (err: any) {
       console.error('[Meteora] healthCheck failed:', err.message);

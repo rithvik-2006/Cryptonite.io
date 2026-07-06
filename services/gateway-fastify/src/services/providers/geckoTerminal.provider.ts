@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { TokenData } from '../../types/token.types';
 import { MarketProvider } from './provider.interface';
 import { RateLimiter, exponentialBackoff } from '../../utils/rateLimiter';
+import { geckoTerminalRateLimiter } from '../../utils/sharedRateLimiters';
 import config from '../../config/config';
 
 // Default SOL price for USD → SOL conversion. Updated lazily via trending pool data.
@@ -30,7 +31,7 @@ export class GeckoTerminalProvider implements MarketProvider {
   private solPriceUsd = DEFAULT_SOL_PRICE_USD;
 
   constructor() {
-    this.rateLimiter = new RateLimiter(config.apiRateLimits.geckoTerminal);
+    this.rateLimiter = geckoTerminalRateLimiter;
 
     this.http = axios.create({
       baseURL: this.baseURL,

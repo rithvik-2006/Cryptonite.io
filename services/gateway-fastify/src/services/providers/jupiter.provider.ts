@@ -25,10 +25,14 @@ export class JupiterProvider implements MarketProvider {
           const tokenMeta = tokensRes.data.find(t => t.address.toLowerCase() === address.toLowerCase());
           if (!tokenMeta) return null;
 
-          // Fetch price from Jupiter Pricing API
-          const priceRes = await httpClient.get<any>(`https://api.jup.ag/price/v2?ids=${address}`);
-          const priceInfo = priceRes.data?.data?.[address];
-          const priceUsd = parseFloat(priceInfo?.price || '0');
+          // Fetch price from Jupiter Pricing API V3
+          const headers: Record<string, string> = {};
+          if (process.env.JUPITER_API_KEY) {
+            headers['x-api-key'] = process.env.JUPITER_API_KEY;
+          }
+          const priceRes = await httpClient.get<any>(`https://api.jup.ag/price/v3?ids=${address}`, { headers });
+          const priceInfo = priceRes.data?.[address];
+          const priceUsd = typeof priceInfo?.usdPrice === 'number' ? priceInfo.usdPrice : parseFloat(priceInfo?.usdPrice || '0');
 
           return {
             token_address: tokenMeta.address,
@@ -69,15 +73,19 @@ export class JupiterProvider implements MarketProvider {
 
           const addresses = topTokens.map(t => t.address).join(',');
           
-          // Fetch prices for all top 50 in a single request
-          const priceRes = await httpClient.get<any>(`https://api.jup.ag/price/v2?ids=${addresses}`);
-          const prices = priceRes.data?.data || {};
+          // Fetch prices for all top 50 in a single request (V3 endpoint)
+          const headers: Record<string, string> = {};
+          if (process.env.JUPITER_API_KEY) {
+            headers['x-api-key'] = process.env.JUPITER_API_KEY;
+          }
+          const priceRes = await httpClient.get<any>(`https://api.jup.ag/price/v3?ids=${addresses}`, { headers });
+          const prices = priceRes.data || {};
 
           const results: TokenData[] = [];
           for (const token of topTokens) {
             const priceInfo = prices[token.address];
             if (!priceInfo) continue;
-            const priceUsd = parseFloat(priceInfo.price || '0');
+            const priceUsd = typeof priceInfo.usdPrice === 'number' ? priceInfo.usdPrice : parseFloat(priceInfo.usdPrice || '0');
 
             results.push({
               token_address: token.address,
@@ -107,7 +115,7 @@ export class JupiterProvider implements MarketProvider {
 
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await httpClient.get('https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112');
+      const response = await httpClient.get('https://tokens.jup.ag/tokens?tags=verified');
       return response.status === 200;
     } catch (err: any) {
       console.error('[Jupiter] healthCheck failed:', err.message);
